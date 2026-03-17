@@ -1,4 +1,5 @@
 import { Initiator, Responder } from '../index';
+import { GenericContainer, StartedTestContainer, Wait } from 'testcontainers';
 
 interface TestMessage {
     type: string;
@@ -7,9 +8,32 @@ interface TestMessage {
 }
 
 describe('Carmentis Relay Client', () => {
-    const relayUrl = 'http://localhost:3000';
+    let container: StartedTestContainer;
+    let relayUrl: string;
     let initiator: Initiator<TestMessage>;
     let responder: Responder<TestMessage>;
+
+    beforeAll(async () => {
+        // Start the Carmentis Relay container
+        console.log('Starting Carmentis Relay container...');
+        container = await new GenericContainer('ghcr.io/carmentis/relay')
+            .withExposedPorts(3000)
+            .withWaitStrategy(Wait.forListeningPorts())
+            .start();
+
+        const host = container.getHost();
+        const port = container.getMappedPort(3000);
+        relayUrl = `http://${host}:${port}`;
+        console.log(`Relay running at: ${relayUrl}`);
+    });
+
+    afterAll(async () => {
+        // Stop the container
+        if (container) {
+            console.log('Stopping Carmentis Relay container...');
+            await container.stop();
+        }
+    });
 
     afterEach(async () => {
         // Clean up connections
