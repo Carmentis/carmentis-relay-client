@@ -1,5 +1,5 @@
 {
-  "name": "carmentis-relay-client",
+  "name": "@cmts-dev/carmentis-relay-client",
   "version": "0.0.0-development",
   "description": "A TypeScript client for the Carmentis Relay service with end-to-end AEAD encryption",
   "main": "dist/index.js",
@@ -8,11 +8,14 @@
     "dist",
     "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "example": "tsc && node dist/example.js",
     "test": "jest",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "pnpm run build",
     "semantic-release": "semantic-release"
   },
   "repository": {
