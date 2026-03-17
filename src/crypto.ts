@@ -1,3 +1,9 @@
+// Import Node.js crypto conditionally
+let nodeCrypto: any;
+if (typeof window === 'undefined') {
+    nodeCrypto = require('crypto');
+}
+
 /**
  * Cross-platform crypto utilities for browser and Node.js
  */
@@ -5,6 +11,7 @@ export class AEADCrypto {
     private static readonly KEY_LENGTH = 32; // 256 bits
     private static readonly IV_LENGTH = 12; // 96 bits (recommended for GCM)
     private static readonly TAG_LENGTH = 16; // 128 bits
+    private static readonly ALGORITHM = 'aes-256-gcm';
 
     /**
      * Check if running in browser environment
@@ -22,8 +29,7 @@ export class AEADCrypto {
             window.crypto.getRandomValues(bytes);
             return bytes;
         } else {
-            const crypto = require('crypto');
-            return new Uint8Array(crypto.randomBytes(length));
+            return new Uint8Array(nodeCrypto.randomBytes(length));
         }
     }
 
@@ -99,16 +105,16 @@ export class AEADCrypto {
             // Browser: Use Web Crypto API
             const cryptoKey = await window.crypto.subtle.importKey(
                 'raw',
-                key,
+                key.buffer as ArrayBuffer,
                 { name: 'AES-GCM' },
                 false,
                 ['encrypt']
             );
 
             const encrypted = await window.crypto.subtle.encrypt(
-                { name: 'AES-GCM', iv, tagLength: this.TAG_LENGTH * 8 },
+                { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: this.TAG_LENGTH * 8 },
                 cryptoKey,
-                plaintext
+                plaintext.buffer as ArrayBuffer
             );
 
             // Web Crypto returns ciphertext + tag combined
@@ -122,8 +128,7 @@ export class AEADCrypto {
             return this.bytesToBase64(result);
         } else {
             // Node.js: Use built-in crypto
-            const crypto = require('crypto');
-            const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+            const cipher = nodeCrypto.createCipheriv(this.ALGORITHM, key, iv);
 
             let encrypted = cipher.update(plaintext);
             encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -154,27 +159,26 @@ export class AEADCrypto {
             // Browser: Use Web Crypto API
             const cryptoKey = await window.crypto.subtle.importKey(
                 'raw',
-                key,
+                key.buffer as ArrayBuffer,
                 { name: 'AES-GCM' },
                 false,
                 ['decrypt']
             );
 
             const decrypted = await window.crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv, tagLength: this.TAG_LENGTH * 8 },
+                { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer, tagLength: this.TAG_LENGTH * 8 },
                 cryptoKey,
-                ciphertextAndTag
+                ciphertextAndTag.buffer as ArrayBuffer
             );
 
             const json = this.bytesToString(new Uint8Array(decrypted));
             return JSON.parse(json) as T;
         } else {
             // Node.js: Use built-in crypto
-            const crypto = require('crypto');
             const tag = ciphertextAndTag.slice(ciphertextAndTag.length - this.TAG_LENGTH);
             const encrypted = ciphertextAndTag.slice(0, ciphertextAndTag.length - this.TAG_LENGTH);
 
-            const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+            const decipher = nodeCrypto.createDecipheriv(this.ALGORITHM, key, iv);
             decipher.setAuthTag(tag);
 
             let decrypted = decipher.update(encrypted);
@@ -185,51 +189,4 @@ export class AEADCrypto {
         }
     }
 
-    /**
-     * Encrypts a message using AES-256-GCM
-     * @param message - The plaintext message to encrypt
-     * @param keyBase64 - The base64 encoded key
-     * @returns Base64 encoded encrypted message (IV + ciphertext + auth tag)
-     * @deprecated Use encryptObject instead
-     */
-    static encrypt(message: string, keyBase64: string): string {
-        const key = Buffer.from(keyBase64, 'base64');
-        const iv = crypto.randomBytes(this.IV_LENGTH);
-
-        const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
-
-        let encrypted = cipher.update(message, 'utf8');
-        encrypted = Buffer.concat([encrypted, cipher.final()]);
-
-        const tag = cipher.getAuthTag();
-
-        // Concatenate IV + encrypted data + auth tag
-        const result = Buffer.concat([iv, encrypted, tag]);
-        return result.toString('base64');
-    }
-
-    /**
-     * Decrypts a message using AES-256-GCM
-     * @param encryptedBase64 - Base64 encoded encrypted message (IV + ciphertext + auth tag)
-     * @param keyBase64 - The base64 encoded key
-     * @returns The decrypted plaintext message
-     * @deprecated Use decryptObject instead
-     */
-    static decrypt(encryptedBase64: string, keyBase64: string): string {
-        const key = Buffer.from(keyBase64, 'base64');
-        const data = Buffer.from(encryptedBase64, 'base64');
-
-        // Extract IV, ciphertext, and auth tag
-        const iv = data.subarray(0, this.IV_LENGTH);
-        const tag = data.subarray(data.length - this.TAG_LENGTH);
-        const encrypted = data.subarray(this.IV_LENGTH, data.length - this.TAG_LENGTH);
-
-        const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
-        decipher.setAuthTag(tag);
-
-        let decrypted = decipher.update(encrypted);
-        decrypted = Buffer.concat([decrypted, decipher.final()]);
-
-        return decrypted.toString('utf8');
-    }
 }
