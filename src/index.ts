@@ -71,12 +71,12 @@ export abstract class RelayClient<TMessage = any> {
 	/**
 	 * Send an encrypted message through the socket
 	 */
-	send(message: TMessage): void {
+	async send(message: TMessage): Promise<void> {
 		if (!this.socket || !this.socket.connected) {
 			throw new Error('Socket is not connected');
 		}
 
-		const encrypted = AEADCrypto.encryptObject(message, this.aeadKey);
+		const encrypted = await AEADCrypto.encryptObject(message, this.aeadKey);
 		this.socket.emit('message', encrypted);
 	}
 
@@ -107,9 +107,9 @@ export abstract class RelayClient<TMessage = any> {
 	protected setupSocket(socket: Socket): void {
 		this.socket = socket;
 
-		socket.on('message', (encryptedMessage: string) => {
+		socket.on('message', async (encryptedMessage: string) => {
 			try {
-				const decryptedMessage = AEADCrypto.decryptObject<TMessage>(encryptedMessage, this.aeadKey);
+				const decryptedMessage = await AEADCrypto.decryptObject<TMessage>(encryptedMessage, this.aeadKey);
 
 				if (this.messageHandler) {
 					this.messageHandler(decryptedMessage);

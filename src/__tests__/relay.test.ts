@@ -114,7 +114,7 @@ describe('Carmentis Relay Client', () => {
         // Send message from initiator to responder
         const msg1: TestMessage = { type: 'greeting', content: 'Hello from Initiator!', timestamp: Date.now() };
         console.log('Initiator sending:', msg1);
-        initiator.send(msg1);
+        await initiator.send(msg1);
 
         // Wait for message delivery
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -122,7 +122,7 @@ describe('Carmentis Relay Client', () => {
         // Send message from responder to initiator
         const msg2: TestMessage = { type: 'greeting', content: 'Hello from Responder!', timestamp: Date.now() };
         console.log('Responder sending:', msg2);
-        responder.send(msg2);
+        await responder.send(msg2);
 
         // Wait for message delivery
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -130,13 +130,13 @@ describe('Carmentis Relay Client', () => {
         // Send more messages
         const msg3: TestMessage = { type: 'data', content: 'Message 2 from Initiator', timestamp: Date.now() };
         console.log('Initiator sending:', msg3);
-        initiator.send(msg3);
+        await initiator.send(msg3);
 
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const msg4: TestMessage = { type: 'data', content: 'Message 2 from Responder', timestamp: Date.now() };
         console.log('Responder sending:', msg4);
-        responder.send(msg4);
+        await responder.send(msg4);
 
         // Wait for all messages to be received
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -167,9 +167,9 @@ describe('Carmentis Relay Client', () => {
         expect(initiator.isConnected()).toBe(false);
 
         // Try to send a message after closing
-        expect(() => {
-            initiator.send({ type: 'test', content: 'This should fail' });
-        }).toThrow('Socket is not connected');
+        await expect(async () => {
+            await initiator.send({ type: 'test', content: 'This should fail' });
+        }).rejects.toThrow('Socket is not connected');
     });
 
     test('should handle close event', async () => {
