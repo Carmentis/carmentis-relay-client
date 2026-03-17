@@ -1,0 +1,48 @@
+{
+  "name": "carmentis-relay-client",
+  "version": "0.0.0-development",
+  "description": "A TypeScript client for the Carmentis Relay service with end-to-end AEAD encryption",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "example": "tsc && node dist/example.js",
+    "test": "jest",
+    "prepublishOnly": "npm run build",
+    "semantic-release": "semantic-release"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/carmentis-relay-client.git"
+  },
+  "keywords": [
+    "relay",
+    "websocket",
+    "socket.io",
+    "encryption",
+    "aead",
+    "carmentis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YOUR_USERNAME/carmentis-relay-client/issues"
+  },
+  "homepage": "https://github.com/YOUR_USERNAME/carmentis-relay-client#readme",
+  "dependencies": {
+    "axios": "^1.13.6",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.7",
+    "jest": "^29.7.0",
+    "semantic-release": "^24.2.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.5.3"
+  }
+}
